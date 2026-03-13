@@ -1,0 +1,74 @@
+---
+description: Core architecture rules for every project
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Architecture Rules for Synthesis Tutor Clone
+
+## Stack Requirements
+
+**Exact Stack:**
+- Frontend: Next.js 14.x + React 18.x (App Router, TypeScript 5.x)
+- Backend: FastAPI 0.104+ (Python 3.11+)
+- Database: PostgreSQL 15+ (lesson progress, user interactions)
+- Infrastructure: Docker + docker-compose (single monorepo)
+- Auth: JWT tokens only (no complex auth flows for 1-week prototype)
+
+## Monorepo Structure
+
+```
+synthesis-tutor/
+├── apps/
+│   ├── frontend/          # Next.js app
+│   └── backend/           # FastAPI app
+├── packages/
+│   ├── shared-types/      # TypeScript interfaces
+│   └── fraction-engine/   # Fraction manipulation logic
+├── docker-compose.yml
+├── Dockerfile.frontend
+├── Dockerfile.backend
+└── README.md
+```
+
+## Project-Specific Rules
+
+### Core Features (Build First - Happy Path Only)
+1. **Fraction Manipulative Component** - Interactive fraction blocks (1/2, 1/4, etc.)
+2. **Chat Interface** - Simple scripted tutor responses
+3. **Lesson Flow Engine** - Linear progression through fraction equivalence concept
+4. **Progress Tracking** - Simple completion status in database
+
+### Forbidden Practices
+- **NO microservices** - Keep everything in monorepo
+- **NO LLM integration** - Use scripted responses only for 1-week timeline
+- **NO complex auth flows** - JWT tokens for basic session management
+- **NO mobile app** - Web-only, iPad browser optimized
+- **NO real-time features** - Simple request/response patterns
+- **NO exotic libraries** - Stick to React, FastAPI, PostgreSQL stack
+- **NO mock data in production** - Real database from day 1
+
+### Dependency Rules
+- **Frontend:** React, Next.js, TypeScript, Tailwind CSS only
+- **Backend:** FastAPI, SQLAlchemy, Pydantic, python-jose for JWT
+- **Database:** PostgreSQL with simple schema (users, lessons, progress)
+- **UI:** Native HTML5 drag/drop for fraction manipulatives - no complex animation libraries
+
+### Development Approach
+1. **Start with end-to-end flow:** User opens lesson → manipulates fractions → tutor responds → lesson completes
+2. **Dockerize immediately:** Every component must run with `docker-compose up`
+3. **iPad-first responsive design:** Touch interactions, large tap targets
+4. **Happy path only:** No error handling beyond basic validation
+5. **Single lesson scope:** Fraction equivalence concept only - no curriculum building
+
+### Technical Constraints
+- **Performance:** Must run smoothly on iPad Safari
+- **Touch Interface:** All interactions must work with touch (no hover states)
+- **Offline-ready:** Static assets cached for smooth interaction
+- **Simple State:** React state + PostgreSQL only - no Redux/Zustand complexity
+
+### Verification Requirements
+- Must demonstrate complete lesson flow in browser
+- Must run with single `docker-compose up` command
+- Must work on provided iPad hardware
+- Must complete fraction equivalence lesson end-to-end
