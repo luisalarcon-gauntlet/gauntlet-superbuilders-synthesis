@@ -17,6 +17,6 @@ class LessonStep(BaseModel):
     
     # Relationships
     lesson = relationship("Lesson", back_populates="steps")
-    sessions = relationship("UserSession", foreign_keys="[UserSession.current_step_id]", back_populates="current_step")
+    sessions = relationship("UserSession", foreign_keys="UserSession.current_step_id", back_populates="current_step")
     manipulative_interactions = relationship("ManipulativeInteraction", back_populates="step")
     conversation_logs = relationship("ConversationLog", back_populates="step")
