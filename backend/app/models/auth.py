@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
+from app.models.common import StandardResponse
 
 
 class RegisterRequest(BaseModel):
@@ -39,7 +40,4 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class StandardResponse(BaseModel):
-    """Standard API response wrapper"""
-    data: Optional[AuthResponse] = None
-    error: Optional[str] = None
+# StandardResponse moved to common.py for reuse across all endpoints
