@@ -128,12 +128,6 @@ class CombineBlocksResponse(BaseModel):
     tutor_message: TutorMessageResponse
 
 
-class QuestionOption(BaseModel):
-    """Question option model"""
-    value: str
-    label: str
-
-
 class QuestionResponse(BaseModel):
     """Response for POST /lessons/fractions/question"""
     question: Dict[str, Any]  # Flexible question structure

@@ -5,7 +5,6 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
-from app.models.common import StandardResponse
 
 
 class RegisterRequest(BaseModel):

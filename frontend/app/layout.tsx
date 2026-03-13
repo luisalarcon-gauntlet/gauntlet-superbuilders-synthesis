@@ -1,6 +1,7 @@
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import './globals.css';
+import { ReactNode } from 'react';
 
 export const metadata = {
   title: 'Synthesis Math Tutor',
@@ -10,7 +11,7 @@ export const metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <html lang="en">

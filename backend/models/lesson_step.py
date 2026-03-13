@@ -5,7 +5,6 @@ from models.base import BaseModel
 from sqlalchemy import Column, String, Integer, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-import uuid
 
 
 class LessonStep(BaseModel):
