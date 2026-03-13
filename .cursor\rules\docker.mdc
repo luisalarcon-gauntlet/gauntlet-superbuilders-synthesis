@@ -1,0 +1,179 @@
+---
+description: Docker and docker-compose rules
+globs: ["Dockerfile", "docker-compose.yml", "docker-compose*.yml"]
+alwaysApply: true
+---
+
+# Docker and Docker Compose Rules
+
+## NON-NEGOTIABLE HANDOFF REQUIREMENT
+🚨 **CRITICAL**: Every single layer must pass `docker-compose up --build` successfully before handoff. No exceptions.
+
+## Docker Compose Rules
+
+### Service Configuration
+- Every service must have explicit `restart: unless-stopped` or `restart: "no"`
+- Use specific service names (no generic names like "app" or "web")
+- All exposed ports must be documented with comments explaining their purpose
+- Services must use named volumes for persistent data, never bind mounts in production configs
+
+### Health Checks
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+```
+- Every web service MUST have a health check
+- Health check endpoints must return proper HTTP status codes
+- Use appropriate intervals (not too frequent, not too sparse)
+
+### Dependencies
+```yaml
+depends_on:
+  database:
+    condition: service_healthy
+```
+- Use `depends_on` with `condition: service_healthy` for services with health checks
+- Use `depends_on` with service names for services without health checks
+- Document dependency chains in comments
+
+### Environment Variables
+- Use `.env` files for development, never hardcode in docker-compose.yml
+- Provide `.env.example` with all required variables
+- Use `environment:` for simple vars, `env_file:` for complex configurations
+- Sensitive data must use Docker secrets or external secret management
+
+## Dockerfile Rules
+
+### Version Pinning
+```dockerfile
+FROM node:18.17.1-alpine
+RUN npm install express@4.18.2
+```
+- NEVER use `latest` tag
+- Pin major.minor.patch versions for base images
+- Pin exact versions for critical dependencies
+- Use alpine variants when possible for smaller images
+
+### Security
+```dockerfile
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+USER nextjs
+```
+- Create and use non-root user
+- Use specific UID/GID (1001 is standard for Node.js apps)
+- Drop root privileges before running application
+- Use `--no-cache` flag with apk/apt commands
+
+### Multi-stage Builds
+```dockerfile
+FROM node:18.17.1-alpine AS builder
+# Build stage
+
+FROM node:18.17.1-alpine AS runner
+# Runtime stage
+```
+- Use multi-stage builds for production images
+- Name your stages descriptively
+- Copy only necessary artifacts to final stage
+- Use `.dockerignore` to exclude unnecessary files
+
+### Layer Optimization
+- Combine RUN commands where logical: `RUN apk add --no-cache git && npm install`
+- Copy package files before source code to leverage Docker layer caching
+- Order commands from least to most likely to change
+
+## Environment Variable Rules
+
+### Naming Convention
+- Use SCREAMING_SNAKE_CASE for all environment variables
+- Prefix application-specific vars: `MATH_TUTOR_API_KEY`
+- Use standard names: `PORT`, `NODE_ENV`, `DATABASE_URL`
+
+### Documentation
+```yaml
+environment:
+  - NODE_ENV=production        # Runtime environment
+  - PORT=3000                  # Application port
+  - DATABASE_URL=${DATABASE_URL}  # PostgreSQL connection string
+```
+- Comment every environment variable's purpose
+- Provide examples in `.env.example`
+- Document required vs optional variables
+
+## Verification Checklist - MUST PASS BEFORE HANDOFF
+
+### Pre-Handoff Docker Verification
+Run these commands and confirm ALL pass:
+
+```bash
+# 1. Clean build test
+docker-compose down -v
+docker-compose build --no-cache
+docker-compose up -d
+
+# 2. Health check verification
+docker-compose ps  # All services should show "healthy" or "Up"
+
+# 3. Service connectivity test
+docker-compose exec web curl -f http://localhost:3000/health || echo "HEALTH CHECK FAILED"
+
+# 4. Log verification (no errors in startup)
+docker-compose logs --tail=50
+
+# 5. Clean shutdown test
+docker-compose down
+
+# 6. Production simulation
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+```
+
+### Mandatory File Checks
+- [ ] `.dockerignore` exists and excludes node_modules, .git, README.md
+- [ ] `.env.example` exists with all required variables
+- [ ] `README.md` contains Docker setup instructions
+- [ ] All Dockerfiles use pinned versions (no `latest`)
+- [ ] All services have health checks or explicit `depends_on`
+- [ ] Non-root user configured in all Dockerfiles
+
+### iPad Web App Specific Requirements
+```dockerfile
+# Ensure proper mobile headers
+EXPOSE 3000
+ENV HOST=0.0.0.0
+ENV PORT=3000
+```
+- Application must bind to `0.0.0.0:3000` for iPad browser access
+- Include viewport meta tags for proper mobile rendering
+- Test responsive design in container environment
+
+### Math Tutor Application Specific
+```yaml
+services:
+  math-tutor:
+    build: .
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+    environment:
+      - NODE_ENV=production
+      - LESSON_TYPE=fraction_equivalence
+```
+- Fraction manipulation interface must load within 5 seconds
+- Conversational interface must be responsive on mobile
+- All static assets must be properly served
+
+### Final Verification Command
+```bash
+# This single command MUST work flawlessly
+docker-compose up --build -d && sleep 30 && curl -f http://localhost:3000 && echo "✅ HANDOFF APPROVED"
+```
+
+**FAILURE OF ANY VERIFICATION STEP = IMMEDIATE REJECTION**
