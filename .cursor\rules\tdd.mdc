@@ -1,0 +1,83 @@
+---
+description: AI Test Driven Development — applied to every coding agent
+globs: ["**/*.py", "**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# AI Test Driven Development Rules
+
+## Core TDD Workflow
+1. **RED**: Write a test first that describes the expected behavior. The test MUST fail initially.
+2. **GREEN**: Write the minimum code necessary to make the test pass.
+3. **REFACTOR**: Clean up code while keeping tests green.
+4. **VALIDATE**: Run `docker-compose up --build` - all tests must be green before proceeding.
+
+## Test Requirements
+
+### Test Structure
+- **One test per feature/behavior** - focus on happy path only
+- **Test names must describe behavior, not implementation**
+  - ✅ Good: `test_tutor_responds_encouragingly_to_correct_fraction_answer`
+  - ❌ Bad: `test_chat_handler_returns_200_status`
+
+### Backend Testing (Python)
+- Use `pytest` with `httpx` for API testing
+- Test against real Docker database, not mocks
+- Example test structure:
+  ```python
+  def test_tutor_guides_student_through_fraction_equivalence():
+      # Test the actual tutor conversation flow
+      response = client.post("/chat", json={"message": "1/2 equals 2/4"})
+      assert "Excellent!" in response.json()["tutor_response"]
+  ```
+
+### Frontend Testing (TypeScript/React)
+- Use React Testing Library
+- **Test what the user sees and does**, not internal state
+- Example test structure:
+  ```typescript
+  test('student can combine fraction blocks to show equivalence', () => {
+    render(<FractionManipulative />);
+    // Test user interactions with fraction blocks
+    fireEvent.click(screen.getByRole('button', { name: /combine blocks/i }));
+    expect(screen.getByText(/1\/2 equals 2\/4/i)).toBeInTheDocument();
+  });
+  ```
+
+## Code Complexity Rules
+- **If the test is hard to write, the code is too complex** - simplify the implementation
+- Break down complex features into smaller, testable units
+- Prefer composition over complex inheritance
+
+## Project-Specific Test Priorities
+For the Synthesis Tutor clone, focus tests on:
+- Tutor conversation flow and responses
+- Fraction manipulative interactions
+- Student progress through lesson stages
+- iPad touch interface compatibility
+
+## Docker Validation
+Every change must pass:
+```bash
+docker-compose up --build
+# All tests must be green ✅
+# Application must start without errors ✅
+# API endpoints must respond correctly ✅
+```
+
+## What This Does NOT Cover
+These TDD rules focus on functional correctness and do not address:
+- **Edge cases**: Error handling, invalid inputs, network failures
+- **Performance**: Load testing, response times, memory usage
+- **Security**: Authentication, authorization, input sanitization, XSS protection
+- **Accessibility**: Screen reader support, keyboard navigation
+- **Browser compatibility**: Cross-browser testing beyond basic functionality
+- **Data persistence**: Backup, recovery, data migration
+- **Monitoring**: Logging, metrics, error tracking
+- **Scalability**: Concurrent users, database optimization
+
+## Enforcement
+- Tests must be written BEFORE implementation code
+- All tests must pass before committing changes
+- No skipping the Docker validation step
+- Focus on user-visible behavior, not internal implementation details
