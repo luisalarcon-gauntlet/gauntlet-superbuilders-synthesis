@@ -1,6 +1,3 @@
-import React from 'react';
-import { TutorMessage } from '@/lib/api';
-
 interface TutorChatProps {
   messages: Array<{ id: string; text: string; type: string; sender: 'tutor' | 'student' }>;
 }
