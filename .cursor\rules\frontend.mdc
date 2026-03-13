@@ -1,0 +1,75 @@
+---
+description: Next.js frontend conventions
+globs: ["frontend/**/*.ts", "frontend/**/*.tsx"]
+alwaysApply: true
+---
+
+# Next.js Frontend Rules
+
+## App Router File Structure
+- Use Next.js 13+ App Router structure
+- Pages go in `app/` directory with `page.tsx` files
+- Layouts use `layout.tsx` files
+- Loading states use `loading.tsx` files
+- Error boundaries use `error.tsx` files
+- Components go in `components/` directory
+- Utilities go in `lib/` directory
+
+## API Integration
+- **NEVER use mock data** - always fetch from real backend
+- ALL API calls must go through `/lib/api.ts`
+- Use proper error handling for all API calls
+- Implement retry logic for critical API calls
+
+## Required Loading and Error States
+- Every data fetch operation MUST have loading and error states
+- Use `loading.tsx` files for page-level loading
+- Use `Suspense` boundaries for component-level loading
+- Implement error boundaries with `error.tsx` files
+- Show user-friendly error messages
+
+## Authentication
+- Auth context must be provided at root layout level
+- JWT tokens stored in memory ONLY - never localStorage
+- Implement token refresh logic
+- Redirect unauthenticated users appropriately
+
+## TypeScript Standards
+- Strict mode enabled
+- NO `any` types allowed - use proper typing
+- Use interface definitions for all data structures
+- Prefer type unions over any
+- Use generic types where appropriate
+
+## Deferred Features
+The following features are explicitly deferred and should NOT be implemented:
+- Mobile responsive design (focus on iPad web browser only)
+- Complex animations or transitions
+- Accessibility features (a11y)
+- Dark mode theming
+- Multi-language support
+- Advanced responsive breakpoints
+
+## Component Structure
+- Use functional components with hooks
+- Implement proper prop typing
+- Use React.memo for performance optimization where needed
+- Follow single responsibility principle
+
+## State Management
+- Use React Context for global state
+- Prefer built-in hooks (useState, useEffect) over external libraries
+- Implement custom hooks for reusable logic
+- Keep state as close to components that need it as possible
+
+## Performance
+- Implement code splitting with dynamic imports
+- Use Next.js Image component for all images
+- Implement proper caching strategies
+- Minimize bundle size
+
+## Error Handling
+- Implement global error boundary
+- Log errors appropriately
+- Provide fallback UI for errors
+- Handle network errors gracefully
