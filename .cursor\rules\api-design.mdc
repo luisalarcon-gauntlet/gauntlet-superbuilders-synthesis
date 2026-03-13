@@ -1,0 +1,211 @@
+---
+description: FastAPI backend conventions
+globs: ["backend/**/*.py"]
+alwaysApply: true
+---
+
+# FastAPI Backend Design Rules
+
+## Response Shape
+- ALL API responses must follow the standardized shape:
+```python
+{
+    "data": {...},  # Contains the actual response data
+    "error": None   # Contains error info when applicable, otherwise null
+}
+```
+- Use Pydantic models for consistent response typing:
+```python
+class StandardResponse(BaseModel):
+    data: Optional[Any] = None
+    error: Optional[str] = None
+```
+
+## File Structure
+```
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI app initialization
+│   ├── core/
+│   │   ├── config.py        # Settings and configuration
+│   │   ├── security.py      # Auth utilities (JWT, bcrypt)
+│   │   └── database.py      # Database connection
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── deps.py          # Dependency injection functions
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       ├── router.py    # Main API router
+│   │       └── endpoints/
+│   │           ├── auth.py
+│   │           ├── lessons.py
+│   │           ├── progress.py
+│   │           └── tutor.py
+│   ├── models/              # Pydantic models
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── lesson.py
+│   │   └── user.py
+│   └── services/            # Business logic
+│       ├── __init__.py
+│       ├── auth_service.py
+│       ├── lesson_service.py
+│       └── tutor_service.py
+```
+
+## Route Structure and Naming
+- Use APIRouter for modular route organization
+- Prefix all routes with `/api/v1`
+- Use plural nouns for resource collections: `/lessons`, `/users`
+- Use resource ID for specific items: `/lessons/{lesson_id}`
+- Action-based endpoints use verbs: `/lessons/{lesson_id}/complete`
+
+Example router structure:
+```python
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/api/v1/lessons", tags=["lessons"])
+
+@router.get("")  # GET /api/v1/lessons
+@router.get("/{lesson_id}")  # GET /api/v1/lessons/123
+@router.post("")  # POST /api/v1/lessons
+@router.put("/{lesson_id}")  # PUT /api/v1/lessons/123
+@router.post("/{lesson_id}/complete")  # POST /api/v1/lessons/123/complete
+```
+
+## HTTP Method Usage
+- **GET**: Retrieve data (idempotent, no side effects)
+- **POST**: Create new resources or trigger actions
+- **PUT**: Update entire resources (idempotent)
+- **PATCH**: Partial updates
+- **DELETE**: Remove resources
+- Use POST for complex queries or actions that don't fit standard CRUD
+
+## FastAPI-Specific Conventions
+
+### Dependency Injection
+- Create reusable dependencies in `api/deps.py`
+- Use Depends() for authentication, database sessions, and common validations
+```python
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer
+
+security = HTTPBearer()
+
+async def get_current_user(token: str = Depends(security)):
+    # JWT validation logic
+    return user
+```
+
+### Pydantic Models
+- Create separate request/response models in `models/` directory
+- Use BaseModel for all data validation
+- Include Field() for validation rules and documentation
+```python
+from pydantic import BaseModel, Field
+
+class LessonCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+    concept: str = Field(..., description="Math concept being taught")
+    
+class LessonResponse(BaseModel):
+    id: str
+    title: str
+    concept: str
+    created_at: datetime
+```
+
+### Error Handling
+- Use HTTPException for API errors
+- Always return errors in standardized response format
+```python
+from fastapi import HTTPException
+
+def handle_error(error_msg: str, status_code: int = 400):
+    return {"data": None, "error": error_msg}
+```
+
+## Authentication Rules
+
+### JWT Implementation
+- Use PyJWT for token generation and validation
+- Store JWT secret in environment variables
+- Set appropriate expiration times (access: 15min, refresh: 7 days)
+```python
+import jwt
+from datetime import datetime, timedelta
+
+def create_access_token(user_id: str) -> str:
+    payload = {
+        "user_id": user_id,
+        "exp": datetime.utcnow() + timedelta(minutes=15)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+```
+
+### Password Security
+- **NEVER** return password hashes in any API response
+- Use bcrypt for password hashing with appropriate salt rounds (12+)
+```python
+import bcrypt
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12))
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+```
+
+### User Models
+- Separate User models for creation, response, and database
+- Exclude sensitive fields in response models
+```python
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    created_at: datetime
+    # NEVER include password or password_hash
+    
+    class Config:
+        from_attributes = True
+```
+
+## Response Examples for Math Tutor Context
+
+### Lesson Progress
+```python
+@router.post("/{lesson_id}/progress")
+async def update_lesson_progress(progress: ProgressUpdate):
+    return {
+        "data": {
+            "lesson_id": lesson_id,
+            "completed_steps": progress.completed_steps,
+            "current_concept": "fraction_equivalence",
+            "next_action": "manipulate_fraction_blocks"
+        },
+        "error": None
+    }
+```
+
+### Tutor Interaction
+```python
+@router.post("/tutor/respond")
+async def get_tutor_response(user_input: UserInput):
+    return {
+        "data": {
+            "message": "Great job! You've shown that 1/2 equals 2/4.",
+            "next_prompt": "Now try combining these fraction blocks...",
+            "encouragement_level": "high"
+        },
+        "error": None
+    }
+```
+
+### Error Response
+```python
+return {
+    "data": None,
+    "error": "Invalid fraction manipulation. Please try again."
+}
+```
